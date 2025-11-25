@@ -26,6 +26,9 @@ def load_data():
     # Drop duplicates
     spotify = spotify.drop_duplicates(subset=["track_name", "artists"]).copy()
 
+    # Reset index so rows match feature_matrix rows
+    spotify = spotify.reset_index(drop=True)
+
     # Scale numerical features
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(spotify[audio_features])
