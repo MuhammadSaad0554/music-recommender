@@ -4,50 +4,44 @@ st.title("Project Overview")
 
 st.subheader("Dataset")
 st.write("""
-The dataset used in this project contains Spotify tracks curated by a Kaggle contributor.
+The dataset used in this project contains Spotify tracks based on a publicly available Kaggle dataset.
 It includes more than one hundred thousand songs, along with metadata such as track name,
 artists, album, and playlist-derived genre labels.
 
-The primary focus of this project is on the numerical audio features, including:
+My main focus was on the numerical audio features, including:
 danceability, energy, valence, acousticness, speechiness, instrumentalness,
 liveness, loudness, and tempo.
 
 These audio features are commonly used in music information retrieval research and
-enable similarity-based recommendation systems.
+used in similarity-based recommendation systems.
 """)
 
 st.subheader("Model Overview")
 st.write("""
-This project uses a content-based recommendation approach built around audio
-features, unsupervised learning, and cosine similarity. The main steps are:
+The main steps are:
 
 1. Data Preprocessing  
-   The raw dataset contained many duplicates, since the same song appeared in multiple playlists.
+   The raw dataset contained many duplicates, as same songs appeared in multiple playlists.
    Duplicates were removed, and track names were cleaned to ensure consistent string formatting.
 
 2. Feature Scaling  
-   Audio features have different numeric ranges. Standardizing them ensures that no
-   single feature dominates the similarity computation.
+   Audio features have different numeric ranges, so had to standardize. 
 
 3. Dimensionality Reduction with PCA  
-   PCA reduces the nine audio features into two principal components. This helps remove noise,
-   increases cluster separation, and improves the quality of downstream methods.
+   Used PCA to reduce the nine audio features into two principal components. This helped remove noise and
+   improve cluster quality.
 
 4. Clustering with KMeans  
-   Songs are grouped into broad musical categories. A higher value of k (currently set to 25)
-   improves recommendation quality by producing more granular clusters.
+   Songs are clustered into broad musical categories. My cluster evaluation is not robust and based on trial and error.
+   Found that a higher value of k (currently set to 25) improved the final recommendations as opposed to a lower one. 
 
 5. Cosine Similarity  
-   Recommendations are generated based on cosine similarity over the scaled feature space.
-   Cosine similarity focuses on the direction of a feature vector rather than magnitude, which
-   is appropriate for comparing musical characteristics.
+   Recommendations are generated based on cosine similarity.
+   Wanted to focus more on direction than magnitude.
 
-6. Similarity Constrained by Genre  
-   To avoid cross-genre confusion in the recommendations, similarity is computed only among songs
-   that share the same playlist-based genre label. This hybrid approach improves recommendation
-   relevance but also introduces a limitation: genre labels themselves are noisy and do not
-   perfectly separate musical styles.
+6. Similarity Based on Genre  
+   Similarity is computed only among songs from similar genre.
+   This hybrid approach improves recommendation
+   relevance but also introduces a limitation: genres are not neatly split and can cross over. 
 
-Overall, this system implements a transparent and interpretable example of a
-content-based music recommendation model.
 """)
