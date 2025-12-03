@@ -17,71 +17,83 @@ def load_data():
         "loudness", "tempo"
     ]
 
+    # Clean dataset
     spotify = spotify.dropna(subset=audio_features)
-    spotify = spotify.drop_duplicates(subset=["track_name", "artists"]).copy()
-    spotify = spotify.reset_index(drop=True)
+    spotify = spotify.drop_duplicates(subset=["track_name", "artists"]).reset_index(drop=True)
 
+    # Scaling
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(spotify[audio_features])
 
+    # PCA
     pca = PCA(n_components=2)
     X_pca = pca.fit_transform(X_scaled)
     spotify["pca1"] = X_pca[:, 0]
     spotify["pca2"] = X_pca[:, 1]
 
+    # KMeans clustering
     kmeans = KMeans(n_clusters=4, random_state=42)
-    clusters = kmeans.fit_predict(X_pca)
-    spotify["cluster"] = clusters
+    spotify["cluster"] = kmeans.fit_predict(X_pca)
 
     return spotify, X_scaled
 
 
-def recommend_three_categories(song_name, artist_name, top_n=3):
+def hybrid_recommend(song_name, artist_name):
     spotify, feature_matrix = load_data()
 
     mask = (spotify["track_name"] == song_name) & (spotify["artists"] == artist_name)
     if not mask.any():
-        return None, None, None
+        return None
 
     idx = spotify[mask].index[0]
 
-    target_genre = spotify.loc[idx, "track_genre"]
-    target_cluster = spotify.loc[idx, "cluster"]
-    target_vec = feature_matrix[idx].reshape(1, -1)
+    genre = spotify.loc[idx, "track_genre"]
+    cluster = spotify.loc[idx, "cluster"]
 
-    same_group = spotify[
-        (spotify["track_genre"] == target_genre) &
-        (spotify["cluster"] == target_cluster)
-    ]
+    # Same-genre, same-cluster subset
+    subset = spotify[
+        (spotify["track_genre"] == genre) &
+        (spotify["cluster"] == cluster)
+    ].copy()
 
-    sims = cosine_similarity(target_vec, feature_matrix[same_group.index])[0]
-    same_group = same_group.assign(similarity=sims)
+    # Compute cosine similarity
+    sims = cosine_similarity(
+        feature_matrix[idx].reshape(1, -1),
+        feature_matrix[subset.index]
+    )[0]
+    subset["similarity"] = sims
 
-    # same artist matches
-    same_artist = same_group[
-        same_group["artists"] == artist_name
-    ].sort_values("similarity", ascending=False)
+    # --- Categories ---
 
-    same_artist = same_artist[same_artist.index != idx].head(top_n)
+    # 1. SAME ARTIST (up to 5)
+    same_artist = (
+        subset[(subset["artists"] == artist_name) & (subset.index != idx)]
+        .sort_values("similarity", ascending=False)
+        .head(5)
+    )
 
-    # similar popular hits
-    pop_threshold = same_group["popularity"].quantile(0.75)
+    # 2. SIMILAR POPULAR HITS (popularity ≥ 70)
+    similar_popular = (
+        subset[
+            (subset["artists"] != artist_name) &
+            (subset["popularity"] >= 70)
+        ]
+        .sort_values("similarity", ascending=False)
+        .head(5)
+    )
 
-    popular_hits = same_group[
-        (same_group["artists"] != artist_name) &
-        (same_group["popularity"] >= pop_threshold)
-    ].sort_values("similarity", ascending=False).head(top_n)
+    # 3. HIDDEN GEMS (very obscure: popularity ≤ 10)
+    hidden_gems = (
+        subset[
+            (subset["artists"] != artist_name) &
+            (subset["popularity"] <= 10)
+        ]
+        .sort_values("similarity", ascending=False)
+        .head(5)
+    )
 
-    # hidden gems with improved logic
-    gem_threshold = same_group["popularity"].quantile(0.30)
-
-    hidden_gems = same_group[
-        (same_group["artists"] != artist_name) &
-        (same_group["popularity"] <= gem_threshold)
-    ]
-
-    hidden_gems = hidden_gems[
-        hidden_gems["similarity"] > 0.6
-    ].sort_values("similarity", ascending=False).head(top_n)
-
-    return same_artist, popular_hits, hidden_gems
+    return {
+        "same_artist": same_artist[["track_name", "artists", "track_genre"]],
+        "similar_popular": similar_popular[["track_name", "artists", "track_genre"]],
+        "hidden_gems": hidden_gems[["track_name", "artists", "track_genre"]]
+    }
