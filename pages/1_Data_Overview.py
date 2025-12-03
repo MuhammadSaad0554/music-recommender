@@ -17,12 +17,12 @@ spotify = load_data()
 st.subheader("Dataset Summary")
 
 st.write("""
-This dataset contains more than one hundred thousand Spotify tracks along with metadata.
-Each track has information such as track name, artist, genre label, and a collection of
-numerical audio features. These audio features form the foundation of the recommendation engine.
+Contains 124,000 Spotify tracks.
+Main interest in numerical audio features. 
 """)
 
-st.write(spotify.head())
+# Scrollable dataset preview
+st.dataframe(spotify, use_container_width=True, height=350)
 
 st.subheader("Long Tail of Popularity")
 
