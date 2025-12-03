@@ -39,33 +39,33 @@ ax.set_ylabel("Number of Songs")
 ax.grid(False)
 st.pyplot(fig)
 
-st.subheader("Audio Features & Genres")
+st.subheader("Genres & Audio Features")
 
 st.write("""
-Overview of top 5 genres by average danceability, acousticness and valence.
+Below are all genres ranked by their average across three key audio features: **danceability**, 
+**acousticness**, and **valence**. 
 """)
 
-# Compute mean features per genre
+# Compute averages per genre
 genre_means = (
     spotify.groupby("track_genre")[["danceability", "acousticness", "valence"]]
     .mean()
     .reset_index()
 )
 
-# Top 5 for each feature
-top_dance = genre_means.nlargest(5, "danceability")
-top_acoustic = genre_means.nlargest(5, "acousticness")
-top_valence = genre_means.nlargest(5, "valence")
+# Sort genres for each feature
+sorted_dance = genre_means.sort_values("danceability", ascending=False)[["track_genre"]]
+sorted_acoustic = genre_means.sort_values("acousticness", ascending=False)[["track_genre"]]
+sorted_valence = genre_means.sort_values("valence", ascending=False)[["track_genre"]]
 
-st.write("### Top 5 Genres by Danceability")
-st.dataframe(top_dance.sort_values("danceability", ascending=False), 
-             use_container_width=True, height=180)
+# Display scrollable lists
+st.write("### Genres: Danceability")
+st.dataframe(sorted_dance, use_container_width=True, height=220)
 
-st.write("### Top 5 Genres by Acousticness")
-st.dataframe(top_acoustic.sort_values("acousticness", ascending=False), 
-             use_container_width=True, height=180)
+st.write("### Genres: Acousticness")
+st.dataframe(sorted_acoustic, use_container_width=True, height=220)
 
-st.write("### Top 5 Genres by Valence (Musical Positivity)")
-st.dataframe(top_valence.sort_values("valence", ascending=False), 
-             use_container_width=True, height=180)
+st.write("### Genres: Valence")
+st.dataframe(sorted_valence, use_container_width=True, height=220)
+
 
