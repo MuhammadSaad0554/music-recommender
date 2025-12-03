@@ -18,146 +18,134 @@ def load_data():
 spotify = load_data()
 
 st.subheader("Modeling Pipeline")
+
 st.write("""
-This section explains the steps used to build the recommendation system. 
-The model is fully content-based and uses audio features rather than user behavior.
+Recommendations are exclusively content based using Spotify audio features.
 """)
 
-# Prepare audio features
+# Step 1: Data Cleaning
+st.header("Step 1: Data Cleaning")
+
+st.write("""
+Duplicate tracks removed. 
+Tracks with missing audio features dropped.
+Consistent labelling. 
+""")
+
+# Step 2: Feature Scaling
+st.header("Step 2: Feature Scaling")
+
+st.write("""
+Audio features were on different numeric scales. 
+StandardScaler used. 
+""")
+
 audio_features = [
     "danceability", "energy", "valence", "acousticness",
     "speechiness", "instrumentalness", "liveness",
     "loudness", "tempo"
 ]
 
-# Step 1: Cleaning
-st.header("Step 1: Data Cleaning")
-st.write("""
-Duplicate tracks were removed because the same songs appear across many playlists.
-Rows missing audio features were dropped to keep scaling and similarity consistent.
-""")
-
-# Step 2: Feature Scaling
-st.header("Step 2: Feature Scaling")
-st.write("""
-Audio features vary widely in scale (e.g., tempo vs acousticness). 
-StandardScaler ensures all features contribute evenly before PCA and clustering.
-""")
-
 scaler = StandardScaler()
 scaled = scaler.fit_transform(spotify[audio_features])
 
 # Step 3: PCA
-st.header("Step 3: PCA for Dimensionality Reduction")
+st.header("Step 3: PCA Dimensionality Reduction")
+
 st.write("""
-PCA reduces the nine audio features into two principal components. 
-This simplifies clustering and helps reduce noise in the feature space.
+The nine audio features were reduced to two principal components using PCA.
+Reduced noise and improved cluster separation. 
 """)
 
 pca = PCA(n_components=2)
 X_pca = pca.fit_transform(scaled)
 
-# Step 4: Elbow plot for choosing k
-st.header("Step 4: Choosing Number of Clusters")
+# Step 4: KMeans Clustering
+st.header("Step 4: KMeans Clustering")
+
 st.write("""
-To choose the number of clusters, the Sum of Squared Errors (SSE) was calculated for 
-different values of k. A clear bend at **k = 4** suggests four meaningful clusters.
+Used KMeans clustering.
+Used the SSE based Elbow Plot to look at the ideal number of clusters, which were 4.
 """)
 
 sse = []
-k_values = list(range(2, 11))
+k_values = range(2, 13)
 
 for k in k_values:
-    km = KMeans(n_clusters=k, random_state=42).fit(X_pca)
+    km = KMeans(n_clusters=k, random_state=42)
+    km.fit(X_pca)
     sse.append(km.inertia_)
 
-fig_elbow, ax_elbow = plt.subplots(figsize=(6, 4))
-ax_elbow.plot(k_values, sse, marker="o")
-ax_elbow.set_xlabel("Number of Clusters (k)")
-ax_elbow.set_ylabel("SSE")
-ax_elbow.set_title("Elbow Plot for Choosing k")
-st.pyplot(fig_elbow)
+fig_sse, ax_sse = plt.subplots(figsize=(6, 4))
+ax_sse.plot(k_values, sse, marker='o')
+ax_sse.set_title("SSE versus Number of Clusters")
+ax_sse.set_xlabel("Number of Clusters k")
+ax_sse.set_ylabel("SSE")
+st.pyplot(fig_sse)
 
-# Step 5: Fit final kmeans model
-kmeans = KMeans(n_clusters=4, random_state=42)
-clusters = kmeans.fit_predict(X_pca)
-
-spotify["cluster"] = clusters
-
-# Step 6: Top 5 genres in each cluster
-st.header("Cluster Interpretation")
 st.write("""
-Each cluster represents a broad musical tendency based on audio features. 
-The tables below show the **top 5 genres** for each cluster and their 
-interpretation based on acoustic and rhythmic patterns.
+Based on the elbow method, the model uses four clusters which are labeled A, B, C, and D.
+The table below shows the most frequent genres in each cluster.
 """)
 
-genre_counts = (
-    spotify.groupby(["cluster", "track_genre"])
+# Fit final cluster model
+kmeans = KMeans(n_clusters=4, random_state=42)
+spotify["cluster"] = kmeans.fit_predict(X_pca)
+
+# Mapping from numeric cluster to label
+cluster_labels = {0: "A", 1: "B", 2: "C", 3: "D"}
+spotify["cluster_label"] = spotify["cluster"].map(cluster_labels)
+
+top_genres_by_cluster = (
+    spotify.groupby(["cluster_label", "track_genre"])
     .size()
     .reset_index(name="count")
+    .sort_values(["cluster_label", "count"], ascending=[True, False])
 )
 
-for c in range(4):
-    st.subheader(f"Cluster {c}")
+# Cluster Interpretation
+st.header("Cluster Interpretation")
 
-    # get top 5 genres
-    top5 = (
-        genre_counts[genre_counts["cluster"] == c]
-        .sort_values("count", ascending=False)
-        .head(5)
+for lbl in ["A", "B", "C", "D"]:
+    st.subheader(f"Cluster {lbl} Top Genres")
+    subset = top_genres_by_cluster[top_genres_by_cluster["cluster_label"] == lbl]
+    st.dataframe(
+        subset[["track_genre"]].head(10),
+        use_container_width=True,
+        height=240
     )
-    st.dataframe(top5, use_container_width=True)
 
-    # Add descriptive text
-    if c == 0:
-        st.write("""
-        **Description:**  
-        Acoustic, chill, folk-inspired, and mellow tracks. 
-        Contains genres such as acoustic, chill, romance, tango, cantopop, and study music.
-        Represents warm, relaxed, and instrument-forward songs.
-        """)
-    elif c == 1:
-        st.write("""
-        **Description:**  
-        Ambient, classical, and sleep music with very low energy and high acousticness. 
-        Includes classical, piano, opera, ambient, and new-age.
-        Reflects soothing, slow, atmospheric tracks.
-        """)
-    elif c == 2:
-        st.write("""
-        **Description:**  
-        High-energy electronic and heavy styles such as metal, trance, hardstyle, drum-and-bass.
-        Represents loud, fast, intense, and aggressive tracks.
-        """)
-    elif c == 3:
-        st.write("""
-        **Description:**  
-        Danceable, rhythmic global genres such as salsa, forró, dancehall, afrobeat, disco, and house.
-        Represents upbeat, lively, groove-oriented music.
-        """)
-
-# Step 7: Recommendation Logic
-st.header("How Recommendations Are Generated")
+# Step 5: Cosine Similarity
+st.header("Step 5: Cosine Similarity")
 
 st.write("""
-The system provides **three complementary types of recommendations** for each selected song:
-
-1. **Same Artist Recommendations**  
-   Songs by the same artist, within the same cluster and genre, ranked by cosine similarity.  
-   These reflect artistic continuity.
-
-2. **Similar Popular Hits**  
-   Songs from the same cluster and genre but by different artists.  
-   Ranked by cosine similarity but filtered for high popularity.  
-   These capture mainstream, widely-liked tracks.
-
-3. **Deep Cuts (Less Popular Songs)**  
-   Same cluster and genre, but filtered for lower popularity.  
-   These highlight lesser-known but musically similar songs.
-
-Cosine similarity ensures that recommendations are driven by the **shape** of the audio feature vector, 
-while clustering and genre filtering control for style, energy, and musical context.
+Cosine similarity used to measure how close two songs are in terms of their audio feature vectors.
 """)
 
-st.write("You can now try the recommender in the sidebar.")
+# Step 6: Recommendation Logic
+st.header("Step 6: How Recommendations Are Generated")
+
+st.write("""
+The system produces three categories of recommendations. 
+All three categories rank songs using cosine similarity. 
+The difference between them lies in the filtering rules applied before ranking.
+
+1. Same Artist Matches  
+   These songs come from the same genre, the same cluster, and the same artist as the selected song.
+   They are then ranked by cosine similarity. The top three are returned.
+
+2. Similar Popular Hits  
+   These songs come from the same genre and the same cluster as the selected track. 
+   They must be from different artists and have higher popularity. 
+   They are ranked by cosine similarity, and the top three are returned.
+
+3. Hidden Gems  
+   These songs come from the same genre and the same cluster as the selected track. 
+   They must be from different artists, but they have lower popularity.
+   They are also ranked by cosine similarity, and the top three are returned.
+
+This design balances musical similarity with variety by offering familiar matches, 
+mainstream options, and discovery oriented recommendations.
+""")
+
+st.write("You can now try generating recommendations in the Recommender tab.")
