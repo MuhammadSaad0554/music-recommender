@@ -26,9 +26,9 @@ st.dataframe(spotify, use_container_width=True, height=350)
 st.subheader("Long Tail Challenge")
 
 st.write("""
-Only a small fraction of songs are highly popular while most songs fall into the lower popularity range.
-This creates what is known as a long tail distribution and explains why collaborative filtering would overemphasize popular songs.
-A content based approach helps uncover tracks that receive fewer plays but may still match a user's musical taste.
+Only a small fraction of songs are popular.
+Collaborative filtering based on other users' preferences overemphasizes popular songs.
+Content based approach helps with music discovery. 
 """)
 
 fig, ax = plt.subplots(figsize=(8, 4))
@@ -39,22 +39,33 @@ ax.set_ylabel("Number of Songs")
 ax.grid(False)
 st.pyplot(fig)
 
-st.subheader("Genre Availability")
+st.subheader("Audio Features & Genres")
 
 st.write("""
-See below ten genres with the highest number of songs and the ten genres with the lowest number of songs in the dataset.
+Overview of top 5 genres by average danceability, acousticness and valence.
 """)
 
-genre_counts = spotify["track_genre"].value_counts()
+# Compute mean features per genre
+genre_means = (
+    spotify.groupby("track_genre")[["danceability", "acousticness", "valence"]]
+    .mean()
+    .reset_index()
+)
 
-top10 = genre_counts.head(10).sort_index().reset_index()
-top10.columns = ["Genre", "Song Count"]
+# Top 5 for each feature
+top_dance = genre_means.nlargest(5, "danceability")
+top_acoustic = genre_means.nlargest(5, "acousticness")
+top_valence = genre_means.nlargest(5, "valence")
 
-bottom10 = genre_counts.tail(10).sort_index().reset_index()
-bottom10.columns = ["Genre", "Song Count"]
+st.write("### Top 5 Genres by Danceability")
+st.dataframe(top_dance.sort_values("danceability", ascending=False), 
+             use_container_width=True, height=180)
 
-st.write("Top Ten Genres by Song Count")
-st.dataframe(top10, use_container_width=True, height=250)
+st.write("### Top 5 Genres by Acousticness")
+st.dataframe(top_acoustic.sort_values("acousticness", ascending=False), 
+             use_container_width=True, height=180)
 
-st.write("Bottom Ten Genres by Song Count")
-st.dataframe(bottom10, use_container_width=True, height=250)
+st.write("### Top 5 Genres by Valence (Musical Positivity)")
+st.dataframe(top_valence.sort_values("valence", ascending=False), 
+             use_container_width=True, height=180)
+
