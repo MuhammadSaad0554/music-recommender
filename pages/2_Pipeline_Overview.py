@@ -78,7 +78,7 @@ for k in k_values:
 
 fig_sse, ax_sse = plt.subplots(figsize=(6, 4))
 ax_sse.plot(k_values, sse, marker='o')
-ax_sse.set_title("SSE versus Number of Clusters")
+ax_sse.set_title("Elbow Plot: SSE versus # Clusters")
 ax_sse.set_xlabel("Number of Clusters k")
 ax_sse.set_ylabel("SSE")
 st.pyplot(fig_sse)
