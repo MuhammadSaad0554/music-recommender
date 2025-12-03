@@ -119,33 +119,27 @@ for lbl in ["A", "B", "C", "D"]:
 st.header("Step 5: Cosine Similarity")
 
 st.write("""
-Cosine similarity used to measure how close two songs are in terms of their audio feature vectors.
+Cosine similarity used to measure songs proximity
 """)
 
-# Step 6: Recommendation Logic
+# Step 6: Recommendations 
 st.header("Step 6: How Recommendations Are Generated")
 
 st.write("""
-The system produces three categories of recommendations. 
-All three categories rank songs using cosine similarity. 
-The difference between them lies in the filtering rules applied before ranking.
+Three categories of recommendations:
 
 1. Same Artist Matches  
-   These songs come from the same genre, the same cluster, and the same artist as the selected song.
-   They are then ranked by cosine similarity. The top three are returned.
+   Songs from the same genre, the same cluster, and the same artist as the selected song.
+   Ranked by cosine similarity.
 
 2. Similar Popular Hits  
-   These songs come from the same genre and the same cluster as the selected track. 
-   They must be from different artists and have higher popularity. 
-   They are ranked by cosine similarity, and the top three are returned.
+   Songs from the same genre and the same cluster as the selected track. 
+   Must be from different artists and higher popularity. 
+   Ranked by cosine similarity.
 
 3. Hidden Gems  
-   These songs come from the same genre and the same cluster as the selected track. 
-   They must be from different artists, but they have lower popularity.
-   They are also ranked by cosine similarity, and the top three are returned.
-
-This design balances musical similarity with variety by offering familiar matches, 
-mainstream options, and discovery oriented recommendations.
+   Songs come from the same genre and the same cluster as the selected track. 
+   From different artists and with lower popularity.
+   Also ranked by cosine similarity.
 """)
 
-st.write("You can now try generating recommendations in the Recommender tab.")
