@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import squarify
 
 st.title("Data Overview")
 
@@ -14,45 +15,46 @@ def load_data():
 
 spotify = load_data()
 
-st.subheader("Dataset Summary")
+st.subheader("Dataset")
 
 st.write("""
 Contains 124,000 Spotify tracks.
-Main interest in numerical audio features. 
+Accessible on Kaggle.
+Main interest in numerical audio features.
 """)
 
-# Scrollable dataset preview
 st.dataframe(spotify, use_container_width=True, height=350)
 
-st.subheader("Long Tail of Popularity")
+st.subheader("Long Tail Challenge")
 
 st.write("""
-Most songs in the dataset are not highly popular. A very small fraction has high popularity,
-while the majority fall in the lower ranges. This creates what is known as a long tail
-distribution. Understanding this distribution helps explain why popularity was not used in
-the recommendation model, and why a content-based approach was preferred.
+Small fraction of songs on any platform are popular.
+Recommendation algorithms based on user choices (collaborative filtering) favor popular music.
+Content based filtering can improve discovery with more equitable streaming opportunities.
 """)
 
 fig, ax = plt.subplots(figsize=(8, 4))
-spotify["popularity"].hist(bins=50, ax=ax, color="skyblue", edgecolor="black")
-ax.set_title("Distribution of Song Popularity")
+spotify["popularity"].plot(kind="density", ax=ax, color="purple", linewidth=2)
+ax.set_title("Density Plot: Song Popularity")
 ax.set_xlabel("Popularity Score")
-ax.set_ylabel("Number of Songs")
+ax.set_ylabel("")
+ax.grid(False)
 st.pyplot(fig)
 
 st.subheader("Top 20 Genres")
 
-st.write("""
-The dataset includes a wide variety of genre labels based on playlist metadata.
-Here are the top twenty most common genres in the dataset.
-""")
-
 top_genres = spotify["track_genre"].value_counts().head(20)
 
-fig2, ax2 = plt.subplots(figsize=(8, 6))
-top_genres.plot(kind="bar", ax=ax2, color="lightgreen", edgecolor="black")
-ax2.set_title("Top 20 Most Common Genres")
-ax2.set_ylabel("Number of Songs")
-ax2.set_xlabel("Genre")
-plt.xticks(rotation=45, ha="right")
+sizes = top_genres.values
+labels = [f"{genre}\n{count}" for genre, count in top_genres.items()]
+
+fig2, ax2 = plt.subplots(figsize=(10, 6))
+squarify.plot(
+    sizes=sizes,
+    label=labels,
+    alpha=0.85,
+    color=plt.cm.viridis_r(range(len(sizes)))
+)
+
+plt.axis("off")
 st.pyplot(fig2)
