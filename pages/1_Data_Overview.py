@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import squarify
 
 st.title("Data Overview")
 
@@ -18,9 +17,8 @@ spotify = load_data()
 st.subheader("Dataset")
 
 st.write("""
-Contains 124,000 Spotify tracks.
-Accessible on Kaggle.
-Main interest in numerical audio features.
+This dataset contains approximately 124,000 Spotify tracks sourced from a publicly available Kaggle dataset.
+The main focus of the project is on numerical audio features which are used to build a content based recommendation system.
 """)
 
 st.dataframe(spotify, use_container_width=True, height=350)
@@ -28,33 +26,35 @@ st.dataframe(spotify, use_container_width=True, height=350)
 st.subheader("Long Tail Challenge")
 
 st.write("""
-Small fraction of songs on any platform are popular.
-Recommendation algorithms based on user choices (collaborative filtering) favor popular music.
-Content based filtering can improve discovery with more equitable streaming opportunities.
+Only a small fraction of songs are highly popular while most songs fall into the lower popularity range.
+This creates what is known as a long tail distribution and explains why collaborative filtering would overemphasize popular songs.
+A content based approach helps uncover tracks that receive fewer plays but may still match a user's musical taste.
 """)
 
 fig, ax = plt.subplots(figsize=(8, 4))
-spotify["popularity"].plot(kind="density", ax=ax, color="purple", linewidth=2)
-ax.set_title("Density Plot: Song Popularity")
+ax.hist(spotify["popularity"], bins=range(0, 105, 5), color="purple", edgecolor="black")
+ax.set_title("Distribution of Number of Songs by Popularity Score")
 ax.set_xlabel("Popularity Score")
-ax.set_ylabel("")
+ax.set_ylabel("Number of Songs")
 ax.grid(False)
 st.pyplot(fig)
 
-st.subheader("Top 20 Genres")
+st.subheader("Genre Availability")
 
-top_genres = spotify["track_genre"].value_counts().head(20)
+st.write("""
+See below ten genres with the highest number of songs and the ten genres with the lowest number of songs in the dataset.
+""")
 
-sizes = top_genres.values
-labels = [f"{genre}\n{count}" for genre, count in top_genres.items()]
+genre_counts = spotify["track_genre"].value_counts()
 
-fig2, ax2 = plt.subplots(figsize=(10, 6))
-squarify.plot(
-    sizes=sizes,
-    label=labels,
-    alpha=0.85,
-    color=plt.cm.viridis_r(range(len(sizes)))
-)
+top10 = genre_counts.head(10).sort_index().reset_index()
+top10.columns = ["Genre", "Song Count"]
 
-plt.axis("off")
-st.pyplot(fig2)
+bottom10 = genre_counts.tail(10).sort_index().reset_index()
+bottom10.columns = ["Genre", "Song Count"]
+
+st.write("Top Ten Genres by Song Count")
+st.dataframe(top10, use_container_width=True, height=250)
+
+st.write("Bottom Ten Genres by Song Count")
+st.dataframe(bottom10, use_container_width=True, height=250)
