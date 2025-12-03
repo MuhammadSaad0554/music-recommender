@@ -17,8 +17,8 @@ spotify = load_data()
 st.subheader("Dataset")
 
 st.write("""
-This dataset contains approximately 124,000 Spotify tracks sourced from a publicly available Kaggle dataset.
-The main focus of the project is on numerical audio features which are used to build a content based recommendation system.
+Approximately 124,000 Spotify tracks from a Kaggle dataset.
+Focus on numerical audio features to build a content based recommendation system.
 """)
 
 st.dataframe(spotify, use_container_width=True, height=350)
@@ -42,7 +42,7 @@ st.pyplot(fig)
 st.subheader("Genres & Audio Features")
 
 st.write("""
-Below are all genres ranked by their average across three key audio features: **danceability**, 
+Genres ranked by their average across: **danceability**, 
 **acousticness**, and **valence**. 
 """)
 
