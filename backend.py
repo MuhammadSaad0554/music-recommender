@@ -65,19 +65,23 @@ def recommend_three_categories(song_name, artist_name, top_n=3):
     same_artist = same_artist[same_artist.index != idx].head(top_n)
 
     # similar popular hits
-    pop_threshold = spotify["popularity"].quantile(0.75)
+    pop_threshold = same_group["popularity"].quantile(0.75)
 
     popular_hits = same_group[
         (same_group["artists"] != artist_name) &
         (same_group["popularity"] >= pop_threshold)
     ].sort_values("similarity", ascending=False).head(top_n)
 
-    # hidden gems
-    gem_threshold = spotify["popularity"].quantile(0.25)
+    # hidden gems with improved logic
+    gem_threshold = same_group["popularity"].quantile(0.30)
 
     hidden_gems = same_group[
         (same_group["artists"] != artist_name) &
         (same_group["popularity"] <= gem_threshold)
+    ]
+
+    hidden_gems = hidden_gems[
+        hidden_gems["similarity"] > 0.6
     ].sort_values("similarity", ascending=False).head(top_n)
 
     return same_artist, popular_hits, hidden_gems
